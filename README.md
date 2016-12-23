@@ -79,8 +79,18 @@ $ webpack --debug --config=webpack.dev.config.js
 
 webpack配置
 ```
+
+// 去除第三方库的输出
+// vender: ['vue']
+
+// 去除第三方库的合并
+// new webpack.optimize.CommonsChunkPlugin({
+//   name: 'vender'
+// })
+
+// 加入Vue的绑定
 externals: {
-  "vue": "Vue" //vue绑定到
+  "vue": "Vue"
 },
 ```
 
