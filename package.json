@@ -7,21 +7,26 @@
   "scripts": {
     "build": "gulp"
   },
-  "dependencies": {
-    "vue": "^2.1.6"
-  },
   "devDependencies": {
     "babel-core": "^6.20.0",
     "babel-loader": "^6.2.10",
+    "babel-plugin-component": "^0.6.0",
     "babel-preset-es2015": "^6.18.0",
     "cross-env": "^3.0.0",
     "css-loader": "^0.26.1",
+    "element-ui": "^1.0.8",
     "file-loader": "^0.9.0",
     "gulp": "^3.9.1",
-    "gulp-pug": "^3.2.0",
     "gulp-util": "^3.0.7",
+    "jade": "^1.11.0",
+    "style-loader": "^0.13.1",
+    "url-loader": "^0.5.7",
+    "vue": "^2.1.6",
     "vue-loader": "^10.0.2",
     "vue-template-compiler": "^2.1.6",
     "webpack": "^2.2.0-rc.1"
+  },
+  "dependencies": {
+    "gulp-jade": "^1.1.0"
   }
 }

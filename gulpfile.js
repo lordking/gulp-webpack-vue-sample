@@ -1,44 +1,47 @@
-var path = require('path');
-var gulp = require('gulp');
-var gutil = require('gulp-util');
-var webpack = require('webpack');
-var pug = require('gulp-pug');
+'use strict';
+
+const path = require('path');
+const gulp = require('gulp');
+const gutil = require('gulp-util');
+const webpack = require('webpack');
+const jade = require('gulp-jade');
 
 /*===== 自动化编译的项目配置 =====*/
 
 const SOURCE_PATH = './src/';
 const DEST_PATH = './dist/';
 
-var production_env = process.env.NODE_ENV == 'production' ? true : false;
-var project_path = process.argv[2];
-var project_name = project_path;
+const production_env = process.env.NODE_ENV == 'production' ? true : false;
 
 /*===== 自动化编译的运行脚本 =====*/
 
-if (!project_path) {
-  console.log('Not found', project_path);
-  process.exit(0);
-}
-
-gulp.task(project_name, function(callback) {
-  buildWithPug(function(){
-    buildWithWebpack(callback);
-  });
-});
+gulp.task("default", ["jade", "webpack"]);
+gulp.task("jade", buildWithJade);
+gulp.task("webpack", buildWithWebpack);
 
 if (!production_env) {
   console.log('Start development mode!');
 
-  var watchPath = [
-    path.resolve(__dirname, SOURCE_PATH, project_path, '**/*.jade'),
-    path.resolve(__dirname, SOURCE_PATH, project_path, '**/*.vue'),
-    path.resolve(__dirname, SOURCE_PATH, project_path, '**/*.js')
+  //监听jade
+  let watchPath = [
+    path.resolve(__dirname, SOURCE_PATH, '**/*.jade')
   ];
+  gutil.log('[watch]', watchPath);
 
-  gutil.log('[watch]', 'path:\n', watchPath);
+  let jadeWatcher = gulp.watch(watchPath, ["jade"]);
+  jadeWatcher.on('change', function(event) {
+    gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
+  });
 
-  var watcher = gulp.watch(watchPath, [project_name]);
-  watcher.on('change', function(event) {
+  //监听webpack
+  watchPath = [
+    path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
+    path.resolve(__dirname, SOURCE_PATH, '**/*.js')
+  ];
+  gutil.log('[watch]', watchPath);
+
+  let webpackWatcher = gulp.watch(watchPath, ["webpack"]);
+  webpackWatcher.on('change', function(event) {
     gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
   });
 }
@@ -46,21 +49,24 @@ if (!production_env) {
 /*===== 自动化编译的函数定义 =====*/
 
 //使用Bug编译网页
-function buildWithPug(callback) {
+function buildWithJade(callback) {
 
-  var pugConfig = {
-    src: path.resolve(__dirname, SOURCE_PATH, project_path, '**/*.jade'),
-    options: {
+  let configPath = path.resolve(__dirname, SOURCE_PATH, 'jade.config.js');
+  let config = require(configPath);
+
+  if (config.options) {
+    config.options.pretty = !production_env
+  } else {
+    config.options = {
       pretty: !production_env
-    },
-    dest: path.resolve(__dirname, DEST_PATH, project_path)
+    }
   }
 
-  gulp.src(pugConfig.src)
-    .pipe(pug(pugConfig.options))
-    .pipe(gulp.dest(pugConfig.dest));
+  gulp.src(config.src)
+    .pipe(jade(config.options))
+    .pipe(gulp.dest(config.dest));
 
-  gutil.log('[pug]', 'build: ' + pugConfig.src);
+  gutil.log('[jade]', 'build: ', config.src);
 
   return callback();
 }
@@ -68,14 +74,17 @@ function buildWithPug(callback) {
 //使用webpack编译js、css、png
 function buildWithWebpack(callback) {
 
-  var webpackConfigPath = path.resolve(__dirname, SOURCE_PATH, project_path, 'webpack.config.js');
-  var webpackConfig = require(webpackConfigPath);
-  webpackConfig.entry = path.resolve(__dirname, SOURCE_PATH, project_path, webpackConfig.entry);
-  webpackConfig.output.path = path.resolve(__dirname, DEST_PATH, project_path);
+  let configPath;
+  if (production_env) {
+    configPath = path.resolve(__dirname, SOURCE_PATH, 'webpack.prod.config.js');
+  } else {
+    configPath = path.resolve(__dirname, SOURCE_PATH, 'webpack.dev.config.js');
+  }
 
-  webpack(webpackConfig, function(err, stats) {
+  let config = require(configPath);
+  webpack(config, function(err, stats) {
     if (err) throw new gutil.PluginError('webpack', err);
-    gutil.log('[webpack]', 'build: ' + webpackConfig.entry);
+    gutil.log('[webpack]', config.entry);
 
     callback();
   });

@@ -2,59 +2,90 @@
 
 ## 快速开始
 
-```
-# 下载
-$ git clone https://github.com/lordking/gulp-webpack-jade-vue-sample.git
+介绍如何快速熟悉本样例
 
-# 安装依赖库
+### 下载
+```
+$ git clone https://github.com/lordking/gulp-webpack-jade-vue-sample.git
+```
+
+### 编译调试的时候用得到的命令
+```
+$ npm install webpack@2.2.0-rc.1 -g
+$ npm install jade -g
+$ npm install http-server -g
+```
+
+### 安装依赖库
+```
 $ cd gulp-webpack-jade-vue-sample
 $ npm install
+```
 
-# 生产方式编译
+### 编译
+
+生产方式编译
+```
 $ export NODE_ENV=production
-$ npm run build helloworld
+$ npm run build
+```
 
-# 开发方式运行
+开发方式编译
+```
 $ export NODE_ENV=development
-$ npm run build helloworld
+$ npm run build
+```
 
-# 如果没有http服务，可以安装一个零配置的HTTP服务。
-$ npm install http-server -g
+### 查看结果
+```
 $ http-server dist
 ```
 
-## 配置一个工程
+## 工程说明
 
-1. 为helloworld工程，在src下创建目录`helloworld`
-
-2. 在`helloworld`目录中，创建`webpack.config.js`，定义webpack的编译配置
+### 项目目录结构
 ```
-module.exports = {
-  //...webpack配置
-}
-```
-
-3. 在`helloworld`目录中，创建入口文件`main.js`。main.js，由`webpack.config.js`的entry定义。
-```
-import Vue from 'vue'
-import App from './app.vue'
-
-new Vue({
-  el: '#app',
-  render: h => h(App)
-})
+|- src/ ------------------------- 源代码结构
+    |- assets/ ------------------ 图片等资源文件
+    |- webpack.dev.config.js ---- webpack开发环境配置
+    |- webpack.prod.config.js --- webpack生产环境配置
+    |- jade.config.js ----------- jade配置
+    |- app.js ------------------- 程序入口
+    |- app.vue ------------------ 主页面模板
+    |- app.jade ----------------- 主页面
 ```
 
-4. Vue的书写例子
+
+### 单独编译
+
+编译网页模板
 ```
-main.js
-app.vue
-app.jade
-assets\logo.png
+$ jade *.jade -o dist
 ```
 
-5. 以下的文件，不是必须的。如果不想使用gulp，而是进入目录直接用webpack编译，需要下面文件。
+
+### 编译js、图片、字体等
 ```
-.babelrc //babel对es6配置
-package.json //npm的package配置
+$ webpack --debug --config=webpack.dev.config.js
+```
+
+### 多页面问题
+
+多页面情况下，应该把第三方、通用js库分离出来，用于每个页面缓存相同的库文件。
+
+范例是通过将第三方库生成公共文件的方式分离代码。我们也可以使用CDN的方式，将第三方库缓存起来。
+
+在webpack配置文件中，通过配置externals实现。
+
+webpack配置
+```
+externals: {
+  "vue": "Vue" //vue绑定到
+},
+```
+
+在HTML中加入
+```
+<script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.0.7/vue.runtime.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/vue-router/2.0.1/vue-router.min.js"></script>
 ```
