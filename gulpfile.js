@@ -3,8 +3,10 @@
 const path = require('path');
 const gulp = require('gulp');
 const gutil = require('gulp-util');
-const webpack = require('webpack');
+const gulpWebpack = require('gulp-webpack');
 const jade = require('gulp-jade');
+const webpack = require('webpack');
+
 
 /*===== 自动化编译的项目配置 =====*/
 
@@ -12,6 +14,15 @@ const SOURCE_PATH = './src/';
 const DEST_PATH = './dist/';
 
 const production_env = process.env.NODE_ENV == 'production' ? true : false;
+
+//监听jade
+const jade_src = [
+  path.resolve(__dirname, SOURCE_PATH, '**/*.jade')
+];
+const webpack_src = [
+  path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
+  path.resolve(__dirname, SOURCE_PATH, '**/*.js')
+];
 
 /*===== 自动化编译的运行脚本 =====*/
 
@@ -22,25 +33,18 @@ gulp.task("webpack", buildWithWebpack);
 if (!production_env) {
   console.log('Start development mode!');
 
-  //监听jade
-  let watchPath = [
-    path.resolve(__dirname, SOURCE_PATH, '**/*.jade')
-  ];
-  gutil.log('[watch]', watchPath);
 
-  let jadeWatcher = gulp.watch(watchPath, ["jade"]);
+  gutil.log('[watch]', jade_src);
+
+  let jadeWatcher = gulp.watch(jade_src, ["jade"]);
   jadeWatcher.on('change', function(event) {
     gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
   });
 
   //监听webpack
-  watchPath = [
-    path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
-    path.resolve(__dirname, SOURCE_PATH, '**/*.js')
-  ];
-  gutil.log('[watch]', watchPath);
+  gutil.log('[watch]', webpack_src);
 
-  let webpackWatcher = gulp.watch(watchPath, ["webpack"]);
+  let webpackWatcher = gulp.watch(webpack_src, ["webpack"]);
   webpackWatcher.on('change', function(event) {
     gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
   });
@@ -49,30 +53,20 @@ if (!production_env) {
 /*===== 自动化编译的函数定义 =====*/
 
 //使用Bug编译网页
-function buildWithJade(callback) {
+function buildWithJade() {
 
-  let configPath = path.resolve(__dirname, SOURCE_PATH, 'jade.config.js');
-  let config = require(configPath);
-
-  if (config.options) {
-    config.options.pretty = !production_env
-  } else {
-    config.options = {
+  gulp.src(jade_src)
+    .pipe(jade({
       pretty: !production_env
-    }
-  }
+    }))
+    .pipe(gulp.dest(DEST_PATH));
 
-  gulp.src(config.src)
-    .pipe(jade(config.options))
-    .pipe(gulp.dest(config.dest));
+  gutil.log('[jade]', 'build: ', jade_src);
 
-  gutil.log('[jade]', 'build: ', config.src);
-
-  return callback();
 }
 
 //使用webpack编译js、css、png
-function buildWithWebpack(callback) {
+function buildWithWebpack() {
 
   let configPath;
   if (production_env) {
@@ -82,10 +76,21 @@ function buildWithWebpack(callback) {
   }
 
   let config = require(configPath);
-  webpack(config, function(err, stats) {
-    if (err) throw new gutil.PluginError('webpack', err);
-    gutil.log('[webpack]', config.entry);
+  config.output.path = path.resolve(__dirname, DEST_PATH);
 
-    callback();
-  });
+  let watchPath = [
+    path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
+    path.resolve(__dirname, SOURCE_PATH, '**/*.js')
+  ];
+
+  gulp.src(watchPath)
+    .pipe(gulpWebpack(config, webpack))
+    .pipe(gulp.dest(config.output.path));
+
+  // webpack(config, function(err, stats) {
+  //   if (err) throw new gutil.PluginError('webpack', err);
+  //   gutil.log('[webpack]', config.entry);
+  //
+  //   callback();
+  // });
 }
