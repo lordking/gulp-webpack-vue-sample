@@ -4,16 +4,11 @@ div#app
   img(src="./assets/vue_logo.png")
   img(src="./assets/element_logo.svg")
   h1 {{ msg }}
-  br
-  el-row(:gutter="20")
-    el-col(:span="6")
-    el-col(:span="6")
-      a(href="http://element.eleme.io/" target="_blank")
-        el-button(style="background-color:#13CE66;color:white") Vue.js
-    el-col(:span="6")
-      a(href="http://element.eleme.io/" target="_blank")
-        el-button(style="background-color:#20A0FF;color:white") Element-ui.js
-    el-col(:span="6")
+  el-row(v-bind:gutter=20)
+    el-col(v-bind:span=6 v-bind:offset=6)
+      a.button1.el-button(href="http://www.vuejs.org/" target="_blank") Vue.js
+    el-col(v-bind:span=6)
+      a.el-button.button2(href="http://element.eleme.io/" target="_blank") Element-ui.js
 
 </template>
 
@@ -29,41 +24,38 @@ Vue.use(Col);
 Vue.use(Button);
 
 export default {
-  name: 'app',
-  data() {
-    return {
-      msg: 'A Sample App of Vue + Element-ui.js'
+    name: 'app',
+    data() {
+        return {
+            msg: 'A Sample App of Vue + Element-ui.js1'
+        }
     }
-  }
 };
 </script>
 
 <style>
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    margin-top: 60px;
 }
 
-h1,
-h2 {
+.button1 {
+  background-color: #13CE66!important;
+  color: white!important;
+  text-decoration: none;
+}
+
+.button2 {
+  background-color: #20A0FF!important;
+  color: white!important;
+  text-decoration: none;
+}
+
+h1 {
   font-weight: normal;
 }
 
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-
-a {
-  color: #42b983;
-}
 </style>

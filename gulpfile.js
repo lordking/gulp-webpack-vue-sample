@@ -3,7 +3,6 @@
 const path = require('path');
 const gulp = require('gulp');
 const gutil = require('gulp-util');
-const gulpWebpack = require('gulp-webpack');
 const jade = require('gulp-jade');
 const webpack = require('webpack');
 
@@ -66,7 +65,7 @@ function buildWithJade() {
 }
 
 //使用webpack编译js、css、png
-function buildWithWebpack() {
+function buildWithWebpack(callback) {
 
   let configPath;
   if (production_env) {
@@ -75,22 +74,12 @@ function buildWithWebpack() {
     configPath = path.resolve(__dirname, SOURCE_PATH, 'webpack.dev.config.js');
   }
 
-  let config = require(configPath);
+  const config = require(configPath);
   config.output.path = path.resolve(__dirname, DEST_PATH);
+  webpack(config, function(err, stats) {
+    if (err) throw new gutil.PluginError('webpack', err);
+    gutil.log('[webpack]', 'build: ', config.entry);
 
-  let watchPath = [
-    path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
-    path.resolve(__dirname, SOURCE_PATH, '**/*.js')
-  ];
-
-  gulp.src(watchPath)
-    .pipe(gulpWebpack(config, webpack))
-    .pipe(gulp.dest(config.output.path));
-
-  // webpack(config, function(err, stats) {
-  //   if (err) throw new gutil.PluginError('webpack', err);
-  //   gutil.log('[webpack]', config.entry);
-  //
-  //   callback();
-  // });
+    return callback();
+  });
 }
