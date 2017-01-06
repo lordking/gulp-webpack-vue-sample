@@ -96,12 +96,16 @@ gulp.task('dev:server', function(callback) {
   }
 
   config.entry.app.unshift(
-    "webpack-dev-server/client?http://0.0.0.0:" + global_setting.webpack.server_port,
+    "webpack-dev-server/client?http://127.0.0.1:" + global_setting.webpack.server_port,
     "webpack/hot/dev-server");
 
   config.devServer = {
     historyApiFallback: true,
     noInfo: true
+  };
+
+  config.performance = {
+    hints: false
   };
 
   var compiler = webpack(config);
