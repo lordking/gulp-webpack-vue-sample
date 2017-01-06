@@ -27,7 +27,7 @@ export default {
     name: 'app',
     data() {
         return {
-            msg: 'A Sample App of Vue + Element-ui.js'
+            msg: 'A sample application of vue + element-ui.js with gulp + jade + webpack'
         }
     }
 };

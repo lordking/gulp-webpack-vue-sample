@@ -5,81 +5,163 @@ const gulp = require('gulp');
 const gutil = require('gulp-util');
 const jade = require('gulp-jade');
 const webpack = require('webpack');
-
+const WebpackDevServer = require('webpack-dev-server');
+const exec = require('child_process').exec;
 
 /*===== 自动化编译的项目配置 =====*/
 
-const SOURCE_PATH = './src/';
-const DEST_PATH = './dist/';
+var global_setting = {
+  src_path: './src/',
+  dest_path: './dist/',
+  jade: {
+    src: path.resolve(__dirname, './src/**/*.jade')
+  },
+  webpack: {
+    server_host: '0.0.0.0',
+    server_port: 8181,
+    dev_config_file: 'webpack.dev.config.js',
+    prod_config_file: 'webpack.prod.config.js'
+  }
+};
 
-const production_env = process.env.NODE_ENV == 'production' ? true : false;
 
-//监听jade
-const jade_src = [
-  path.resolve(__dirname, SOURCE_PATH, '**/*.jade')
-];
-const webpack_src = [
-  path.resolve(__dirname, SOURCE_PATH, '**/*.vue'),
-  path.resolve(__dirname, SOURCE_PATH, '**/*.js')
-];
+//缺省任务，警告必须输入命令
+gulp.task('default', function(callback) {
+  gutil.log('Error:', 'Please input some commands for example that is `gulp dev` or `gulp prod`.');
+});
 
-/*===== 自动化编译的运行脚本 =====*/
+//运行开发环境
+gulp.task('dev', ['dev:setting', 'dev:jade', 'dev:server'], function() {
+  console.log("All done!")
+});
 
-gulp.task("default", ["jade", "webpack"]);
-gulp.task("jade", buildWithJade);
-gulp.task("webpack", buildWithWebpack);
+//生产环境输出
+gulp.task('prod', ['prod:setting', 'prod:jade', 'prod:webpack'], function() {
+  console.log("All done!")
+});
 
-if (!production_env) {
+//生产环境输出
+gulp.task('prod:run', ['prod:setting', 'prod:jade', 'prod:server'], function() {
+  console.log("All done!")
+});
+
+//开发环境设置
+gulp.task('dev:setting', function(callback) {
   console.log('Start development mode!');
 
+  return callback();
+});
 
-  gutil.log('[watch]', jade_src);
+//生产环境设置
+gulp.task('prod:setting', function(callback) {
+  console.log('Start production mode!');
 
-  let jadeWatcher = gulp.watch(jade_src, ["jade"]);
-  jadeWatcher.on('change', function(event) {
-    gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
-  });
+  return callback();
+});
 
-  //监听webpack
-  gutil.log('[watch]', webpack_src);
+//使用jade编译网页
+gulp.task('prod:jade', function(callback) {
 
-  let webpackWatcher = gulp.watch(webpack_src, ["webpack"]);
-  webpackWatcher.on('change', function(event) {
-    gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
-  });
-}
-
-/*===== 自动化编译的函数定义 =====*/
-
-//使用Bug编译网页
-function buildWithJade() {
-
-  gulp.src(jade_src)
+  var stream = gulp.src(global_setting.jade.src)
     .pipe(jade({
-      pretty: !production_env
+      pretty: true
     }))
-    .pipe(gulp.dest(DEST_PATH));
+    .pipe(gulp.dest(global_setting.dest_path));
 
-  gutil.log('[jade]', 'build: ', jade_src);
+  gutil.log('[jade]', 'build: ', global_setting.jade.src);
 
-}
+  return callback();
+});
 
-//使用webpack编译js、css、png
-function buildWithWebpack(callback) {
+//开发环境下，使用gulp监视源文件，自动编译输出
+gulp.task('dev:jade', ['prod:jade'], function(callback) {
+  if (!global_setting.production_env) {
+    var wather = gulp.watch(global_setting.jade.src, ['prod:jade']);
+    wather.on('change', function(event) {
+      gutil.log('[watch]', 'File ' + event.path + ' was ' + event.type + ', running tasks...');
+    });
 
-  let configPath;
-  if (production_env) {
-    configPath = path.resolve(__dirname, SOURCE_PATH, 'webpack.prod.config.js');
-  } else {
-    configPath = path.resolve(__dirname, SOURCE_PATH, 'webpack.dev.config.js');
+    gutil.log('[watch]', global_setting.jade.src);
+  }
+});
+
+//开发环境下，启动测试服务器，使用webpack监视源文件，并自动编译输出
+gulp.task('dev:server', function(callback) {
+
+  var configFilePath = path.resolve(__dirname, global_setting.src_path, global_setting.webpack.dev_config_file);
+  var config = require(configFilePath);
+
+  if (Object.prototype.toString.call(config.entry.app) === '[object String]') {
+    config.entry.app = [config.entry.app];
   }
 
-  const config = require(configPath);
-  config.output.path = path.resolve(__dirname, DEST_PATH);
-  webpack(config, function(err, stats) {
-    if (err) throw new gutil.PluginError('webpack', err);
-    gutil.log('[webpack]', 'build: ', config.entry);
+  config.entry.app.unshift(
+    "webpack-dev-server/client?http://0.0.0.0:" + global_setting.webpack.server_port,
+    "webpack/hot/dev-server");
 
-    return callback();
+  config.devServer = {
+    historyApiFallback: true,
+    noInfo: true
+  };
+
+  var compiler = webpack(config);
+
+  var server = new WebpackDevServer(compiler, {
+    publicPath: config.output.publicPath,
+    inline: true,
+    hot: true,
+    stats: {
+      colors: true
+    },
+    contentBase: global_setting.dest_path
   });
-}
+
+  server.listen(global_setting.webpack.server_port, global_setting.webpack.server_host, function(err) {
+    if (err) throw new gutil.PluginError('webpack-dev-server', err);
+    var msg = 'http://' + global_setting.webpack.server_host + ':' + global_setting.webpack.server_port + '/webpack-dev-server/';
+    gutil.log('[webpack-dev-server]', msg);
+  });
+});
+
+//生产环境下，使用gulp编译压缩所有的文件
+gulp.task('prod:webpack', function(callback) {
+
+  var configFilePath = path.resolve(__dirname, global_setting.src_path, global_setting.webpack.prod_config_file);
+  var config = require(configFilePath);
+
+  webpack(config, function(err, stats) {
+    if (err) {
+      gutil.log('[webpack]', 'error:', err);
+    } else {
+      gutil.log('[webpack]', 'build: ', config.entry);
+    }
+
+    callback();
+  });
+
+});
+
+gulp.task('prod:server', function(callback) {
+
+  var configFilePath = path.resolve(__dirname, global_setting.src_path, global_setting.webpack.prod_config_file);
+  var config = require(configFilePath);
+  var compiler = webpack(config);
+
+  var server = new WebpackDevServer(compiler, {
+    publicPath: config.output.publicPath,
+    inline: false,
+    hot: false,
+    stats: {
+      colors: true
+    },
+    contentBase: global_setting.dest_path
+  });
+
+  server.listen(global_setting.webpack.server_port, global_setting.webpack.server_host, function(err) {
+    if (err) throw new gutil.PluginError('webpack-dev-server', err);
+
+    var msg = 'http://' + global_setting.webpack.server_host + ':' + global_setting.webpack.server_port;
+    gutil.log('[webpack-dev-server]', msg);
+  });
+
+});

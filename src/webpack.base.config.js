@@ -6,20 +6,18 @@ const webpack = require('webpack');
 module.exports = {
 
   entry: {
-    app: path.resolve(__dirname, './app.js'),
+    app: path.resolve(__dirname, '../src/main.js'),
     vender: ['vue']
   },
 
   output: {
     path: path.resolve(__dirname, '../dist'),
-    publicPath: './',
+    publicPath: '/dist/',
     filename: 'js/[name].js'
   },
 
   plugins: [
-    new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(),
-    new webpack.NoErrorsPlugin(),
     new webpack.optimize.CommonsChunkPlugin({
       name: 'vender'
     })
@@ -30,11 +28,11 @@ module.exports = {
       test: /\.vue$/,
       loader: 'vue-loader',
       options: {
-         loaders: {
-           'scss': 'vue-style-loader!css-loader!sass-loader',
-           'sass': 'vue-style-loader!css-loader!sass-loader?indentedSyntax'
-         }
-       }
+        loaders: {
+          'scss': 'vue-style-loader!css-loader!sass-loader',
+          'sass': 'vue-style-loader!css-loader!sass-loader?indentedSyntax'
+        }
+      }
     }, {
       test: /\.js$/,
       loader: 'babel-loader',
